@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filtered Map</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'path_to_your_css/stylesheet.css' %}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .custom-btn {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .custom-btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="map">
+        {{ map_html|safe }}
+    </div>
+    <a href="{% url 'map_view' %}" class="btn custom-btn">Previous</a>
+</body>
+</html>

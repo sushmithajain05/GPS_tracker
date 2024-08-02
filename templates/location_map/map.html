@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+        .form-container {
+            margin: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .form-container label {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .form-container input {
+            margin-right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+        }
+        .form-container input:focus {
+            border-color: #80bdff;
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+        .form-container button {
+            font-size: 18px;
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .form-container button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <form method="GET" action="{% url 'filtered_map' %}">
+            <label for="date">Select Date:</label>
+            <input type="date" id="date" name="date" class="form-control" required>
+            <button type="submit" class="btn">Submit</button>
+        </form>
+    </div>
+    <div id="map">
+        {{ map_html|safe }}
+    </div>
+</body>
+</html>
