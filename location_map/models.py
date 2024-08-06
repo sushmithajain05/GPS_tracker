@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.db import models
+from datetime import date, datetime
 
 class Location(models.Model):
     name = models.CharField(max_length=100)
@@ -10,3 +11,5 @@ class Location(models.Model):
 
     def __str__(self):
         return self.name
+ 
+    

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Various Maps</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .hii {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;  /* Changed to white for contrast */
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    {% include 'location_map/navbar.html' %}
+    <div class="hii">
+        <div class="title">Various Maps</div>
+        <div class="button-container">
+            <a href="polyline.html" class="btn">Polyline</a>
+            <a href="polygon.html" class="btn">Polygon</a>
+            <a href="{% url 'map_view' %}" class="btn">Route</a>
+            <a href="onclick.html" class="btn">Onclick</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Map</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <style>
         #map {
             height: 500px;
@@ -43,19 +43,80 @@
             background-color: #0056b3;
             transform: scale(1.05);
         }
+        .custom-btn {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        .custom-btn:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        .no-data {
+            text-align: center;
+            margin: 20px;
+            color: red;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
-    <div class="form-container">
-        <form method="GET" action="{% url 'filtered_map' %}">
-            <label for="date">Select Date:</label>
-            <input type="date" id="date" name="date" class="form-control" required>
-            <button type="submit" class="btn">Submit</button>
-        </form>
+    {% include 'location_map/navbar.html' %}
+    
+    <div class="container">
+        <div class="form-container">
+            <form method="GET" action="{% url 'map_view' %}">
+                <label for="date">Select Date:</label>
+                <input type="date" id="date" name="date" class="form-control" value="{{ date_str }}">
+                <button type="submit" class="btn">Submit</button>
+            </form>
+        </div>
+        <div id="map"></div>
+        {% if no_data %}
+        <div class="no-data">No data available for the selected date.</div>
+        {% endif %}
     </div>
-    <div id="map">
-        {{ map_html|safe }}
-    </div>
-    <h4>Shhhhh</h4>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/polyline-encoded"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const locations = {{ locations|safe }};
+            const routes = {{ routes|safe }};
+
+            const map = L.map('map').setView([0, 0], 2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            if (locations.length > 0) {
+                const bounds = [];
+                locations.forEach(loc => {
+                    const marker = L.marker([loc.latitude, loc.longitude]).addTo(map)
+                        .bindPopup(loc.name);
+                    bounds.push([loc.latitude, loc.longitude]);
+                });
+                if (bounds.length > 0) {
+                    map.fitBounds(bounds);
+                }
+            }
+
+            routes.forEach(route => {
+                const decoded = L.Polyline.fromEncoded(route);
+                L.polyline(decoded.getLatLngs(), {color: 'blue', weight: 5, opacity: 0.7}).addTo(map);
+            });
+
+            if (locations.length > 0) {
+                L.marker([locations[0].latitude, locations[0].longitude], {icon: L.icon({iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png', iconSize: [38, 95]})})
+                    .addTo(map).bindPopup('Start');
+                L.marker([locations[locations.length - 1].latitude, locations[locations.length - 1].longitude], {icon: L.icon({iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-red.png', iconSize: [38, 95]})})
+                    .addTo(map).bindPopup('End');
+            }
+        });
+    </script>
 </body>
 </html>

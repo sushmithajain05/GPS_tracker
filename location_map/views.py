@@ -1,14 +1,27 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.utils.dateparse import parse_date
 from .models import Location
 from .serializers import LocationSerializer
 import json
 import requests
-import polyline
-import folium
-from django.utils.dateparse import parse_date
+from django.shortcuts import render, redirect
+from django.http import HttpResponse
+from .forms import LoginForm
+from django.contrib.auth.models import User
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import AuthenticationForm
+from .forms import SignupForm, LoginForm
+from django.contrib import messages
+from django.urls import reverse
 
+def HomePage(request):
+    return render(request,'location_map/home.html')
+def NavPage(request):
+    return render(request,'location_map/navbar.html')
+def mapPage(request):
+    return render(request,'location_map/maps.html')
 
 @csrf_exempt
 def manage_location(request):
@@ -25,7 +38,6 @@ def manage_location(request):
             return JsonResponse({'error': 'Missing required fields'}, status=400)
 
         try:
-            # Create a new location entry
             location = Location(name=name, latitude=latitude, longitude=longitude)
             location.save()
             return JsonResponse({'success': 'Location added successfully'}, status=201)
@@ -33,7 +45,6 @@ def manage_location(request):
             return JsonResponse({'error': str(e)}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
 
 @csrf_exempt
 def get_all_locations(request):
@@ -44,41 +55,110 @@ def get_all_locations(request):
                 'name': loc.name,
                 'latitude': loc.latitude,
                 'longitude': loc.longitude
-               
             }
             for loc in locations
         ]
         return JsonResponse(location_data, safe=False)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+def signup(request):
+    if request.method == 'POST':
+        form = SignupForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            email = form.cleaned_data.get('email')
+            password = form.cleaned_data.get('password')
+            
+            if not username:
+                form.add_error('username', 'Username is required.')
+            else:
+                user = User.objects.create_user(username=username, email=email, password=password)
+                messages.success(request, 'Account created successfully! Please log in.')
+                return redirect(reverse('login'))  # Redirect to the login page
+
+        return render(request, 'location_map/signup.html', {'form': form})
+    else:
+        form = SignupForm()
+        return render(request, 'location_map/signup.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect(reverse('add_loc'))  # Ensure 'add_loc' is the name of your URL pattern for adding locations
+            else:
+                form.add_error(None, 'Invalid username or password.')
+    else:
+        form = LoginForm()
+    return render(request, 'location_map/login.html', {'form': form})
+
+def loc_add(request):
+    if request.method == 'POST':
+        name = request.POST.get("name")
+        latitude = request.POST.get("latitude")
+        longitude = request.POST.get("longitude")
+
+        if name and latitude and longitude:
+            l = Location(name=name, latitude=latitude, longitude=longitude)
+            l.save()
+            return redirect("table")  # Ensure 'table' is the name of your URL pattern for the target page
+        else:
+            # Handle the case where one of the fields is missing
+            return render(request, "location_map/add_loc.html", {"error": "All fields are required."})
+
+    return render(request, "location_map/add_loc.html")
+
+
+def ListPage(request):
+    loc=Location.objects.all()
+    return render(request,"location_map/table.html",{'loc':loc})
+
+
+
+
+def get_route(start, end):
+    url = f"http://router.project-osrm.org/route/v1/driving/{start[1]},{start[0]};{end[1]},{end[0]}?overview=full&geometries=polyline"
+    response = requests.get(url)
+    data = response.json()
+    if data.get('routes'):
+        return data['routes'][0]['geometry']
+    return None
 
 
 def map_view(request):
-    locations = Location.objects.all()
-    if not locations:
-        # If there are no locations, render an empty map
-        map = folium.Map(location=[0, 0], zoom_start=2)
+    date_str = request.GET.get('date')
+    locations = []
+
+    if date_str:
+        date = parse_date(date_str)
+        locations = Location.objects.filter(created_at__date=date)
     else:
-        # Center map on the first location
-        first_location = locations[0]
-        map = folium.Map(location=[first_location.latitude, first_location.longitude], zoom_start=7)
+        locations = Location.objects.all()
 
-        latlngs = []
-        for loc in locations:
-            latitude = float(loc.latitude)
-            longitude = float(loc.longitude)
-            folium.Marker([latitude, longitude], popup=loc.name).add_to(map)
-            latlngs.append([latitude, longitude])
+    location_data = [
+        {
+            'name': loc.name,
+            'latitude': float(loc.latitude),
+            'longitude': float(loc.longitude)
+        }
+        for loc in locations
+    ]
+    routes = []
+    if len(location_data) > 1:
+        for i in range(len(location_data) - 1):
+            start = (location_data[i]['latitude'], location_data[i]['longitude'])
+            end = (location_data[i + 1]['latitude'], location_data[i + 1]['longitude'])
+            route = get_route(start, end)
+            if route:
+                routes.append(route)
 
-        if latlngs:
-            folium.PolyLine(latlngs, color='blue', weight=5, opacity=0.7).add_to(map)
-            # Add markers for the start and end points
-            folium.Marker(latlngs[0], popup='Start', icon=folium.Icon(color='green')).add_to(map)
-            folium.Marker(latlngs[-1], popup='End', icon=folium.Icon(color='red')).add_to(map)
-            map.fit_bounds(latlngs)
+    no_data = len(location_data) == 0
 
-    map_html = map._repr_html_()
-    return render(request, 'location_map/map.html', {'map_html': map_html})
-
+    return render(request, 'location_map/map.html', {'locations': location_data, 'routes': routes, 'date_str': date_str, 'no_data': no_data})
 
 def filtered_map_view(request):
     date_str = request.GET.get('date')
@@ -88,76 +168,32 @@ def filtered_map_view(request):
         date = parse_date(date_str)
         locations = Location.objects.filter(created_at__date=date)
 
-    if not locations:
-        # If there are no locations for the selected date, render an empty map
-        map = folium.Map(location=[0, 0], zoom_start=2)
-    else:
-        # Center map on the first location
-        first_location = locations[0]
-        map = folium.Map(location=[first_location.latitude, first_location.longitude], zoom_start=7)
-
-        latlngs = []
-        for loc in locations:
-            latitude = float(loc.latitude)
-            longitude = float(loc.longitude)
-            folium.Marker([latitude, longitude], popup=loc.name, icon=folium.Icon(color='blue')).add_to(map)
-            latlngs.append([latitude, longitude])
-
-        if latlngs:
-            folium.PolyLine(latlngs, color='red', weight=5, opacity=0.7).add_to(map)
-            # Add markers for the start and end points
-            folium.Marker(latlngs[0], popup='Start', icon=folium.Icon(color='green')).add_to(map)
-            folium.Marker(latlngs[-1], popup='End', icon=folium.Icon(color='red')).add_to(map)
-            map.fit_bounds(latlngs)
-
-    map_html = map._repr_html_()
-    return render(request, 'location_map/filtered_map.html', {'map_html': map_html, 'date_str': date_str})
-
-
-def get_route(pickup_lon, pickup_lat, dropoff_lon, dropoff_lat):
-    loc = "{},{};{},{}".format(pickup_lon, pickup_lat, dropoff_lon, dropoff_lat)
-    url = "http://router.project-osrm.org/route/v1/driving/"
-    r = requests.get(url + loc) 
-    if r.status_code != 200:
-        return {}
-    
-    res = r.json()
-    routes = polyline.decode(res['routes'][0]['geometry'])
-    start_point = [res['waypoints'][0]['location'][1], res['waypoints'][0]['location'][0]]
-    end_point = [res['waypoints'][1]['location'][1], res['waypoints'][1]['location'][0]]
-    distance = res['routes'][0]['distance']
-    
-    out = {
-        'route': routes,
-        'start_point': start_point,
-        'end_point': end_point,
-        'distance': distance
-    }
-
-    return out
-
-
-def showmap(request):
-    locations = Location.objects.all()
-    locations_data = [
-        {'name': loc.name, 'latitude': float(loc.latitude), 'longitude': float(loc.longitude)}
+    location_data = [
+        {
+            'name': loc.name,
+            'latitude': float(loc.latitude),
+            'longitude': float(loc.longitude)
+        }
         for loc in locations
     ]
-    context = {'locations': json.dumps(locations_data)}
-    return render(request, 'location_map/showmap.html', context)
+    routes = []
+    if len(location_data) > 1:
+        for i in range(len(location_data) - 1):
+            start = (location_data[i]['latitude'], location_data[i]['longitude'])
+            end = (location_data[i + 1]['latitude'], location_data[i + 1]['longitude'])
+            route = get_route(start, end)
+            if route:
+                routes.append(route)
+
+    no_data = len(location_data) == 0
+
+    return render(request, 'location_map/filtered_map.html', {'locations': location_data, 'routes': routes, 'date_str': date_str, 'no_data': no_data})
 
 
-def showroute(request, lat1, long1, lat2, long2):
-    lat1, long1, lat2, long2 = float(lat1), float(long1), float(lat2), float(long2)
-    route = get_route(long1, lat1, long2, lat2)
-    
-    m = folium.Map(location=[(lat1 + lat2) / 2, (long1 + long2) / 2], zoom_start=10)
-    
-    folium.PolyLine(route['route'], weight=8, color='blue', opacity=0.6).add_to(m)
-    folium.Marker(location=route['start_point'], icon=folium.Icon(icon='play', color='green')).add_to(m)
-    folium.Marker(location=route['end_point'], icon=folium.Icon(icon='stop', color='red')).add_to(m)
-    
-    m = m._repr_html_()  # Render the map in HTML
-    context = {'map': m}
-    
-    return render(request, 'location_map/showroute.html', context)
+
+
+
+
+
+
+
