@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map Project</title>
+    <title>navbar</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome for icons -->
@@ -12,26 +12,28 @@
     
     <style>
         .navbar-brand img {
-    max-height: 40px; /* Adjust the size of the logo */
-    height: auto; /* Ensure the image scales correctly */
+            max-height: 40px; 
+            height: auto; 
         }
         .navbar {
-    padding: 0.5rem 1rem; /* Adjust padding to make space for the logo */
-}
-
+            padding: 0.5rem 1rem; /* Adjust padding to make space for the logo */
+        }
+        body {
+            padding-top: 56px; /* Adjust this to match the height of the navbar to prevent content overlap */
+        }
     </style>
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
             <!-- Logo -->
             {% load static %}
 
-              <a class="navbar-brand" href="">
-                 <img src="{% static 'google-maps.png' %}" alt="Logo"> <!-- Logo path -->
-                   Map Project
-              </a>
+            <a class="navbar-brand" href="">
+                <img src="{% static 'google-maps.png' %}" alt="Logo"> <!-- Logo path -->
+                Map Project
+            </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>

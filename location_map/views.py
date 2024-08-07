@@ -270,6 +270,6 @@ class TrainStationCreateView(generics.CreateAPIView):
 class TrainStationListView(generics.ListAPIView):
     queryset = TrainStation.objects.all()
     serializer_class = TrainStationSerializer
-
+@login_required
 def train_route_view(request):
     return render(request, 'location_map/train_route.html')
