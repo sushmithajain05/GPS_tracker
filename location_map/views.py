@@ -12,7 +12,7 @@ from .forms import LoginForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate,logout
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import SignupForm, LoginForm
+from .forms import SignupForm, LoginForm,UploadFileForm
 from django.contrib import messages
 from django.urls import reverse
 from . import getroute1
@@ -20,6 +20,9 @@ import folium
 from django.contrib.auth.decorators import login_required
 from .serializers import TrainStationSerializer
 from rest_framework import generics
+
+from django.core.files.storage import FileSystemStorage
+import openpyxl
 
 
 
@@ -270,6 +273,34 @@ class TrainStationCreateView(generics.CreateAPIView):
 class TrainStationListView(generics.ListAPIView):
     queryset = TrainStation.objects.all()
     serializer_class = TrainStationSerializer
+    
 @login_required
 def train_route_view(request):
     return render(request, 'location_map/train_route.html')
+
+#to upload excel file
+
+@login_required
+def upload_file_view(request):
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            fs = FileSystemStorage()
+            filename = fs.save(file.name, file)
+            filepath = fs.path(filename)
+
+            # Process the Excel file
+            wb = openpyxl.load_workbook(filepath)
+            sheet = wb.active
+
+            for row in sheet.iter_rows(min_row=2, values_only=True):  # assuming the first row is the header
+                name, latitude, longitude = row
+                if not Location.objects.filter(name=name, latitude=latitude, longitude=longitude).exists():
+                    Location.objects.create(name=name, latitude=latitude, longitude=longitude)
+
+            return redirect('table')
+    else:
+        form = UploadFileForm()
+
+    return render(request, 'location_map/upload.html', {'form': form})
