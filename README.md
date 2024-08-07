@@ -7,13 +7,7 @@
 5.train map
 
 @install this before import
-open street map
-leaflet
-osrm
-geocoder
-foilum
-polyline
-requests
+open street map, leaflet,osrm,geocoder,foilum,polyline,requests
 
 Step 1: Set Up Your Environment
 *Install Django:
