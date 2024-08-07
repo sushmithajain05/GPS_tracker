@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Train Route Map</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/polyline"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    {% include 'location_map/navbar.html' %}
+    <h1>Train Route Map</h1>
+    <div id="map"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            var map = L.map('map').setView([51.505, -0.09], 13); // Centered at a default location
+
+           
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+
+            // Fetching part
+            axios.get('/api/train-stations/')
+                .then(function(response) {
+                    var stations = response.data;
+
+                    stations.forEach(function(station) {
+                        L.marker([station.latitude, station.longitude], { title: station.name })
+                            .bindPopup(station.name)
+                            .addTo(map);
+                    });
+
+                    var startStation = stations[0];
+                    var endStation = stations[stations.length - 1];
+
+                    // Add a route
+                    var osrmUrl = `http://router.project-osrm.org/route/v1/driving/${startStation.longitude},${startStation.latitude};${endStation.longitude},${endStation.latitude}?overview=full&geometries=polyline`;
+
+                    axios.get(osrmUrl)
+                        .then(function(response) {
+                            var route = response.data.routes[0];
+                            var routeCoordinates = polyline.decode(route.geometry);
+                            var distance = (route.distance / 1000).toFixed(2); 
+
+                            
+                            L.polyline(routeCoordinates, { color: 'blue' }).addTo(map);
+
+                            L.popup()
+                                .setLatLng([startStation.latitude, startStation.longitude])
+                                .setContent(`<p>Distance: ${distance} km</p>`)
+                                .openOn(map);
+                        })
+                        .catch(function(error) {
+                            console.log('Error fetching route:', error);
+                        });
+                })
+                .catch(function(error) {
+                    console.log('Error fetching stations:', error);
+                });
+        });
+    </script>
+</body>
+</html>

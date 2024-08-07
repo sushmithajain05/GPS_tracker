@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
-from .models import Location
+from .models import Location,TrainStation
 from .serializers import LocationSerializer
 import json
 import requests
@@ -18,7 +18,8 @@ from django.urls import reverse
 from . import getroute1
 import folium
 from django.contrib.auth.decorators import login_required
-
+from .serializers import TrainStationSerializer
+from rest_framework import generics
 
 
 
@@ -261,3 +262,14 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+#train route
+class TrainStationCreateView(generics.CreateAPIView):
+    queryset = TrainStation.objects.all()
+    serializer_class = TrainStationSerializer
+
+class TrainStationListView(generics.ListAPIView):
+    queryset = TrainStation.objects.all()
+    serializer_class = TrainStationSerializer
+
+def train_route_view(request):
+    return render(request, 'location_map/train_route.html')

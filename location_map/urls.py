@@ -1,8 +1,7 @@
 
-from .views import get_all_locations,filtered_map_view, manage_location, map_view,login_view,signup,loc_add,ListPage,NavPage,mapPage,showmap,showroute,map_polyline,map_polygon,logout_view
+from .views import get_all_locations,filtered_map_view, manage_location, map_view,login_view,signup,loc_add,ListPage,NavPage,mapPage,showmap,showroute,map_polyline,map_polygon,logout_view,train_route_view,TrainStationListView,TrainStationCreateView
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('manage_location/', manage_location, name='manage_location'),
@@ -22,6 +21,11 @@ urlpatterns = [
     path('polygon/', map_polygon, name='map_polygon'),
     path('logout/', logout_view, name='logout'),
   
+
+    path('api/train-stations/', TrainStationListView.as_view(), name='train_station_list'),
+    path('api/train-stations/add/', TrainStationCreateView.as_view(), name='train_station_create'),
+    path('train_route/', train_route_view, name='train_route'),
+
 
 ]
 
