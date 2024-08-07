@@ -10,18 +10,30 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .forms import LoginForm
 from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate,logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import SignupForm, LoginForm
 from django.contrib import messages
 from django.urls import reverse
+from . import getroute1
+import folium
+from django.contrib.auth.decorators import login_required
 
-def HomePage(request):
-    return render(request,'location_map/home.html')
+
+
+
+
+#navigation bar 
+@login_required
 def NavPage(request):
     return render(request,'location_map/navbar.html')
+
+#map page
+@login_required
 def mapPage(request):
     return render(request,'location_map/maps.html')
+
+#to add location through postman or api
 
 @csrf_exempt
 def manage_location(request):
@@ -46,6 +58,8 @@ def manage_location(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+# fetch all location through api
+
 @csrf_exempt
 def get_all_locations(request):
     if request.method == 'GET':
@@ -60,6 +74,9 @@ def get_all_locations(request):
         ]
         return JsonResponse(location_data, safe=False)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+#signup page
+
 def signup(request):
     if request.method == 'POST':
         form = SignupForm(request.POST)
@@ -79,6 +96,8 @@ def signup(request):
     else:
         form = SignupForm()
         return render(request, 'location_map/signup.html', {'form': form})
+    
+    #login page
 
 def login_view(request):
     if request.method == 'POST':
@@ -89,13 +108,15 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect(reverse('add_loc'))  # Ensure 'add_loc' is the name of your URL pattern for adding locations
+                return redirect(reverse('table'))  # Ensure 'add_loc' is the name of your URL pattern for adding locations
             else:
                 form.add_error(None, 'Invalid username or password.')
     else:
         form = LoginForm()
     return render(request, 'location_map/login.html', {'form': form})
 
+# add location to database
+@login_required
 def loc_add(request):
     if request.method == 'POST':
         name = request.POST.get("name")
@@ -112,13 +133,13 @@ def loc_add(request):
 
     return render(request, "location_map/add_loc.html")
 
-
+#list of all the locations
+@login_required
 def ListPage(request):
     loc=Location.objects.all()
     return render(request,"location_map/table.html",{'loc':loc})
 
-
-
+# view for route map
 
 def get_route(start, end):
     url = f"http://router.project-osrm.org/route/v1/driving/{start[1]},{start[0]};{end[1]},{end[0]}?overview=full&geometries=polyline"
@@ -128,7 +149,7 @@ def get_route(start, end):
         return data['routes'][0]['geometry']
     return None
 
-
+@login_required
 def map_view(request):
     date_str = request.GET.get('date')
     locations = []
@@ -159,7 +180,7 @@ def map_view(request):
     no_data = len(location_data) == 0
 
     return render(request, 'location_map/map.html', {'locations': location_data, 'routes': routes, 'date_str': date_str, 'no_data': no_data})
-
+@login_required
 def filtered_map_view(request):
     date_str = request.GET.get('date')
     locations = []
@@ -190,10 +211,53 @@ def filtered_map_view(request):
     return render(request, 'location_map/filtered_map.html', {'locations': location_data, 'routes': routes, 'date_str': date_str, 'no_data': no_data})
 
 
+#view for onclick map
+@login_required
+def showmap(request):
+    return render(request, 'location_map/map1.html')
+@login_required
+def showroute(request):
+    waypoints_str = request.GET.get('waypoints')
+    if not waypoints_str:
+        return redirect('location_map/map1')
 
+    waypoints = [[float(coord) for coord in point.split(',')] for point in waypoints_str.split(';')]
+    route = getroute1.get_route1(waypoints)
+    figure = folium.Figure()
+    m = folium.Map(location=route['start_point'], zoom_start=10)
+    m.add_to(figure)
+    folium.PolyLine(route['route'], weight=8, color='blue', opacity=0.6).add_to(m)
+    folium.Marker(location=route['start_point'], icon=folium.Icon(icon='play', color='green')).add_to(m)
+    folium.Marker(location=route['end_point'], icon=folium.Icon(icon='stop', color='red')).add_to(m)
+    for lat, lon in waypoints[1:-1]:
+        folium.Marker(location=[lat, lon], icon=folium.Icon(icon='dot', color='blue')).add_to(m)
+    figure.render()
+    context = {'map': figure}
+    return render(request, 'location_map/filtered_map1.html', context)
 
+#for polyline map
+@login_required
+def map_polyline(request):
+    # Fetch all locations from the database
+    locations = Location.objects.all().order_by('created_at')  # Order by created_at or another relevant field
+    context = {
+        'locations': locations
+    }
+    return render(request, 'location_map/polyline.html', context)
 
+#for polygon map
+@login_required
+def map_polygon(request):
+    # Fetch all locations from the database
+    locations = Location.objects.all().order_by('created_at')  # Order by created_at or another relevant field
+    context = {
+        'locations': locations
+    }
+    return render(request, 'location_map/polygon.html', context)
 
+#logout
 
-
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 

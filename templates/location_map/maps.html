@@ -44,10 +44,10 @@
     <div class="hii">
         <div class="title">Various Maps</div>
         <div class="button-container">
-            <a href="polyline.html" class="btn">Polyline</a>
-            <a href="polygon.html" class="btn">Polygon</a>
+            <a href="{% url 'map_polyline' %}" class="btn">Polyline</a>
+            <a href="{% url 'map_polygon' %}" class="btn">Polygon</a>
             <a href="{% url 'map_view' %}" class="btn">Route</a>
-            <a href="onclick.html" class="btn">Onclick</a>
+            <a href="{% url 'showmap' %}" class="btn">Onclick</a>
         </div>
     </div>
 </body>

@@ -8,10 +8,17 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Load static files -->
+    
     <style>
         .navbar-brand img {
-            max-height: 40px; /* Adjust the size of the logo */
+    max-height: 40px; /* Adjust the size of the logo */
+    height: auto; /* Ensure the image scales correctly */
         }
+        .navbar {
+    padding: 0.5rem 1rem; /* Adjust padding to make space for the logo */
+}
+
     </style>
 </head>
 <body>
@@ -19,24 +26,26 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <!-- Logo -->
-            <a class="navbar-brand" href="">
-                <img src="D:\OSM\google-maps.png" alt="Logo"> <!-- Replace with your logo path -->
-                Map Project
-            </a>
+            {% load static %}
+
+              <a class="navbar-brand" href="">
+                 <img src="{% static 'google-maps.png' %}" alt="Logo"> <!-- Logo path -->
+                   Map Project
+              </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a class="nav-link" href="/add_loc/">Add location</a>
+                    </li> -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/table/">Location Details</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/table/">location Details</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/maps/">maps</a>
+                        <a class="nav-link" href="/maps/">Maps</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ml-auto">
