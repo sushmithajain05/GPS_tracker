@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Train Route Map</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/polyline"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            width: 40%;
+            margin-bottom: 10px;
+        }
+        .input-row label {
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+        .input-row input {
+            width: calc(50% - 10px);
+            padding: 8px;
+        }
+        #submit-button {
+            padding: 10px 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    {% include 'location_app/navbar.html' %}
+    <h1 style="text-align: center;">Train Route Map</h1>
+
+    <div class="form-container">
+        <div class="input-row">
+            <label for="station1-lat">Station 1 Lat:</label>
+            <input type="text" id="station1-lat" placeholder="Enter latitude for station 1">
+        </div>
+        <div class="input-row">
+            <label for="station1-lon">Station 1 Long:</label>
+            <input type="text" id="station1-lon" placeholder="Enter longitude for station 1">
+        </div>
+
+        <div class="input-row">
+            <label for="station2-lat">Station 2 Lat:</label>
+            <input type="text" id="station2-lat" placeholder="Enter latitude for station 2">
+        </div>
+        <div class="input-row">
+            <label for="station2-lon">Station 2 Long:</label>
+            <input type="text" id="station2-lon" placeholder="Enter longitude for station 2">
+        </div>
+
+        <button id="submit-button">Show Route</button>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = L.map('map').setView([51.505, -0.09], 13); // Default location
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+
+            document.getElementById('submit-button').addEventListener('click', function() {
+                var station1Lat = document.getElementById('station1-lat').value;
+                var station1Lon = document.getElementById('station1-lon').value;
+                var station2Lat = document.getElementById('station2-lat').value;
+                var station2Lon = document.getElementById('station2-lon').value;
+
+                if (station1Lat && station1Lon && station2Lat && station2Lon) {
+                    var osrmUrl = `http://router.project-osrm.org/route/v1/driving/${station1Lon},${station1Lat};${station2Lon},${station2Lat}?overview=full&geometries=polyline`;
+
+                    axios.get(osrmUrl)
+                        .then(function(response) {
+                            var route = response.data.routes[0];
+                            var routeCoordinates = polyline.decode(route.geometry);
+                            var distance = (route.distance / 1000).toFixed(2);
+
+                            L.polyline(routeCoordinates, { color: 'blue' }).addTo(map);
+
+                            L.popup()
+                                .setLatLng([station1Lat, station1Lon])
+                                .setContent(`<p>Distance: ${distance} km</p>`)
+                                .openOn(map);
+                        })
+                        .catch(function(error) {
+                            console.log('Error fetching route:', error);
+                        });
+                } else {
+                    alert('Please fill in all latitude and longitude fields.');
+                }
+            });
+        });
+   
+    </script>
+</body>
+</html>

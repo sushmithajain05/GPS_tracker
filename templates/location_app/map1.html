@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>onclick map</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand img {
+            max-height: 40px; /* Adjust the size of the logo */
+        }
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
+        #map {
+            height: calc(100% - 56px); /* Adjust height for the navbar */
+        }
+        #submitBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <!-- Load Leaflet from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Load Esri Leaflet from CDN -->
+    <script src="https://unpkg.com/esri-leaflet@2.5.0/dist/esri-leaflet.js"></script>
+    <!-- Load Esri Leaflet Geocoder from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.css" />
+    <script src="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.js"></script>
+</head>
+<body>
+  {% include 'location_app/navbar.html' %}
+
+    <!-- Map Container -->
+   
+    <div id="map">
+      <div class= "container" id="showroute">
+        <button id="submitBtn">Show Route</button>
+      </div>
+    </div>
+   
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        var map = L.map('map').setView([11, 79], 10);
+        var waypoints = [];
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var gcs = L.esri.Geocoding.geocodeService();
+        map.on('click', (e) => {
+            gcs.reverse().latlng(e.latlng).run((err, res) => {
+                if (err) return;
+                L.marker(res.latlng).addTo(map).bindPopup(res.address.Match_addr).openPopup();
+                waypoints.push([res.latlng.lat, res.latlng.lng]);
+            });
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            if (waypoints.length < 2) {
+                alert('Please select at least two waypoints.');
+                return;
+            }
+            const waypointsStr = waypoints.map(point => point.join(',')).join(';');
+            const baseurl = "/filtered_map1/";
+            const route_url = `${baseurl}?waypoints=${encodeURIComponent(waypointsStr)}`;
+            window.location.replace(route_url);
+        });
+    </script>
+</body>
+</html>
