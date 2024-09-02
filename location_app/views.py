@@ -23,9 +23,6 @@ import openpyxl
 from django.utils import timezone
 import io
 
-
-
-
 #navigation bar 
 @login_required
 def NavPage(request):
