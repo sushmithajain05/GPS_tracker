@@ -46,18 +46,6 @@
             background-color: #0056b3;
             transform: scale(1.05);
         }
-        .custom-btn {
-            font-size: 18px;
-            padding: 10px 20px;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease, transform 0.3s ease;
-        }
-        .custom-btn:hover {
-            background-color: #0056b3;
-            transform: scale(1.05);
-        }
         .no-data {
             text-align: center;
             margin: 20px;
@@ -86,9 +74,12 @@
                 <button type="submit" class="btn">Submit</button>
             </form>
         </div>
+        {% if not no_data %}
         <div id="map"></div>
-        {% if no_data %}
-        <div class="no-data">No data available for the selected date.</div>
+        {% else %}
+        <div class="no-data">No data available 
+            <br> (select date and user)
+        </div>
         {% endif %}
     </div>
 

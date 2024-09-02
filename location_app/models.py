@@ -8,8 +8,8 @@ class Location(models.Model):
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
     username = models.CharField(max_length=100, default='anonymous')
-    date = models.DateField(default=timezone.now)  # Ensure correct import
-    created_at = models.DateTimeField(default=timezone.now)
+    date = models.DateField(default=timezone.now)  
+    created_at = models.DateTimeField(auto_now_add=True)  
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -25,3 +25,4 @@ class TrainStation(models.Model):
 
     def __str__(self):
         return self.name
+

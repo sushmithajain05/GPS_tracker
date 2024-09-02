@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>road map</title>
+    <title>Filtered Road Map</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <style>
@@ -19,10 +19,12 @@
     </style>
 </head>
 <body>
-    {% include 'location_app/navbar.html' %} 
+    {% include 'location_app/navbar.html' %}
+
     <div class="container">
+        {% if not no_data %}
         <div id="map"></div>
-        {% if no_data %}
+        {% else %}
         <div class="no-data">No data available for the selected date.</div>
         {% endif %}
     </div>

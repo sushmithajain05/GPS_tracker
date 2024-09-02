@@ -21,6 +21,7 @@ from rest_framework import generics
 from django.core.files.storage import FileSystemStorage
 import openpyxl
 from django.utils import timezone
+import io
 
 
 
@@ -170,13 +171,9 @@ def map_view(request):
     if username and date_str:
         date = parse_date(date_str)
         locations = Location.objects.filter(username=username, date=date)
-    elif username:
-        locations = Location.objects.filter(username=username)
-    elif date_str:
-        date = parse_date(date_str)
-        locations = Location.objects.filter(date=date)
     else:
-        locations = Location.objects.all()
+        # If no username and date are selected, we do not populate locations.
+        locations = []
 
     location_data = [
         {
@@ -207,6 +204,7 @@ def map_view(request):
         'users': users,
         'selected_user': username
     })
+
 @login_required
 def filtered_map_view(request):
     date_str = request.GET.get('date')
@@ -224,6 +222,7 @@ def filtered_map_view(request):
         }
         for loc in locations
     ]
+
     routes = []
     if len(location_data) > 1:
         for i in range(len(location_data) - 1):
@@ -235,7 +234,12 @@ def filtered_map_view(request):
 
     no_data = len(location_data) == 0
 
-    return render(request, 'location_app/filtered_map.html', {'locations': location_data, 'routes': routes, 'date_str': date_str, 'no_data': no_data})
+    return render(request, 'location_app/filtered_map.html', {
+        'locations': location_data,
+        'routes': routes,
+        'date_str': date_str,
+        'no_data': no_data
+    })
 
 
 #view for onclick map
@@ -309,39 +313,43 @@ def upload_file_view(request):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             file = request.FILES['file']
-            fs = FileSystemStorage()
-            filename = fs.save(file.name, file)
-            filepath = fs.path(filename)
 
-            # Process the Excel file
-            wb = openpyxl.load_workbook(filepath)
+            # Read the file into memory
+            file_content = file.read()
+            file_stream = io.BytesIO(file_content)
+
+            # Load the workbook from the in-memory file stream
+            wb = openpyxl.load_workbook(file_stream)
             sheet = wb.active
 
-            for row in sheet.iter_rows(min_row=2, values_only=True):  # assuming the first row is the header
+            for row in sheet.iter_rows(min_row=2, values_only=True):  
                 if len(row) < 5:
-                    # Skip rows that do not have the expected number of columns
                     print(f"Skipping row due to insufficient data: {row}")
                     continue
 
-                name, latitude, longitude, username, date_str = row
-                
-                # Debugging output
-                print(f"Read row: {row}")
+                name, latitude, longitude, username, date_value = row
 
-                if not name:  # Check if 'name' is None or empty
+                # Debug print statements
+                print(f"Read row: {row}")
+                print(f"Date value read from file: {date_value}")
+
+                if not name:  
                     print(f"Skipping row due to missing name: {row}")
                     continue
 
-                # Parse the date from DD-MM-YYYY format
-                try:
-                    date = datetime.strptime(date_str, '%d-%m-%Y').date()
-                except (ValueError, TypeError) as e:
-                    print(f"Invalid date format or missing date: {date_str} - Error: {e}")
-                    date = datetime.today().date()  # Use today's date if date is invalid
+                # Handle date as datetime.datetime object or default to today's date
+                if isinstance(date_value, datetime):
+                    date = date_value.date()
+                    print(f"Extracted date: {date}")
+                else:
+                    print(f"Inval id date value: {date_value} - Expected datetime.datetime but got {type(date_value)}")
+                    date = datetime.today().date()  # Default to today's date if date is not a datetime object
+                    print(f"Defaulting to today's date: {date}")
 
-                # Check if an entry with the same data already exists
+                # Check if the location already exists
                 if not Location.objects.filter(name=name, latitude=latitude, longitude=longitude, username=username, date=date).exists():
                     Location.objects.create(name=name, latitude=latitude, longitude=longitude, username=username, date=date)
+                    print(f"Created new location entry: {name}, {latitude}, {longitude}, {username}, {date}")
                 else:
                     print(f"Entry already exists: {row}")
 
