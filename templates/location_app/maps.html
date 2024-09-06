@@ -29,27 +29,64 @@
         }
         .btn {
             background-color: #007bff;
-            color: white;  /* Changed to white for contrast */
+            color: white;  
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
             text-decoration: none;
             font-size: 16px;
             text-align: center;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     {% include 'location_app/navbar.html' %}
+    <div id="navbar"></div>
     <div class="hii">
         <div class="title">Various Maps</div>
-        <div class="button-container">
-            <a href="{% url 'map_polyline' %}" class="btn">Polyline</a>
-            <a href="{% url 'map_polygon' %}" class="btn">Polygon</a>
-            <a href="{% url 'map_view' %}" class="btn">Route</a>
-            <a href="{% url 'showmap' %}" class="btn">Onclick</a>
-            <a href="{% url 'train_route' %}" class="btn">Train route</a>
-        </div>
+        <div class="button-container" id="button-container"></div>
     </div>
+
+    <script>
+        //object 
+        const urls = {
+            map_polyline: '/polyline/',
+            map_polygon: '/polygon/',
+            map_view: '/location_app/map/',
+            showmap: '/map1/',
+            train_route: '/train_route/'
+        };
+
+        // button object
+        const buttonData = [
+            { id: 'map_polyline', text: 'Polyline' },
+            { id: 'map_polygon', text: 'Polygon' },
+            { id: 'map_view', text: 'Route' },
+            { id: 'showmap', text: 'Onclick' },
+            { id: 'train_route', text: 'Train route' }
+        ];
+
+        function createButtons() {
+            const container = document.getElementById('button-container');
+            buttonData.forEach(button => {
+                const btn = document.createElement('button');
+                btn.className = 'btn';
+                btn.id = button.id;
+                btn.innerText = button.text;
+                btn.onclick = () => window.location.href = urls[button.id];
+                container.appendChild(btn);
+            });
+        }
+
+    
+        function initPage() {
+            
+            createButtons();
+        }
+
+        
+        initPage();
+    </script>
 </body>
 </html>
